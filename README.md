@@ -1,4 +1,4 @@
-# CHIP-8 Emulator
+# CHIP-8 Interpreter
 > **Author: Fernando A.**
 
 An **CHIP-8 interpreter** written in C++, rendered in real-time via SDL2. Every subsystem (memory, display, CPU and allocator) is implemented from scratch, with an emphasis on low-level correctness and performance.
