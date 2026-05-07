@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // File: Instructions.cpp
 //
-// Desc:
+// Desc: Instructions implementation.
 //
 // Copyright (C) Fernando A. All Rights Reserved.
 //-----------------------------------------------------------------------------
@@ -14,6 +14,10 @@
 #define Vy		interpreter->m_registers->V[ (opcode >> 4) & 0xF ]
 #define VF		interpreter->m_registers->V[ 0xF ]
 
+//-----------------------------------------------------------------------------
+// Name: Dispatch0()
+// Desc: Routes 0x00XX opcodes.
+//-----------------------------------------------------------------------------
 void CInstructions::Dispatch0( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( (opcode & 0xFF) == 0xE0 ) {
@@ -24,21 +28,37 @@ void CInstructions::Dispatch0( CInterpreter *interpreter, const uint16_t opcode 
 	RET( interpreter, opcode );
 }
 
+//-----------------------------------------------------------------------------
+// Name: CLS()
+// Desc: Clean screen.
+//-----------------------------------------------------------------------------
 void CInstructions::CLS( CInterpreter *interpreter, const uint16_t opcode )
 {
 	interpreter->m_display->Clear();
 }
 
+//-----------------------------------------------------------------------------
+// Name: RET()
+// Desc: Returns from subroutine.
+//-----------------------------------------------------------------------------
 void CInstructions::RET( CInterpreter *interpreter, const uint16_t opcode )
 {
 	interpreter->m_registers->pc = interpreter->m_registers->stack[ --interpreter->m_registers->SP ];
 }
 
+//-----------------------------------------------------------------------------
+// Name: JP()
+// Desc: Jumps to the specified address.
+//-----------------------------------------------------------------------------
 void CInstructions::JP( CInterpreter *interpreter, const uint16_t opcode )
 {
 	interpreter->m_registers->pc = opcode & 0xFFF;
 }
 
+//-----------------------------------------------------------------------------
+// Name: CALL()
+// Desc: Call subroutine at the specified address, and jump to the address.
+//-----------------------------------------------------------------------------
 void CInstructions::CALL( CInterpreter *interpreter, const uint16_t opcode )
 {
 	interpreter->m_registers->stack[ interpreter->m_registers->SP++ ] = interpreter->m_registers->pc;
@@ -46,6 +66,10 @@ void CInstructions::CALL( CInterpreter *interpreter, const uint16_t opcode )
 	interpreter->m_registers->pc = opcode & 0xFFF;
 }
 
+//-----------------------------------------------------------------------------
+// Name: SE()
+// Desc: Skip next instruction if Vx == Kk or Vx == Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::SE( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( ((opcode >> 12) & 0xF) == 0x3 ) {
@@ -60,6 +84,10 @@ void CInstructions::SE( CInterpreter *interpreter, const uint16_t opcode )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Name: SNE()
+// Desc: Skip next instruction if Vx != Kk or Vx != Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::SNE( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( ((opcode >> 12) & 0xF) == 0x4 ) {
@@ -74,6 +102,10 @@ void CInstructions::SNE( CInterpreter *interpreter, const uint16_t opcode )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Name: LD()
+// Desc: Handles all load variants. 
+//-----------------------------------------------------------------------------
 void CInstructions::LD( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( ((opcode >> 12) & 0xF) == 0x6 ) {
@@ -92,6 +124,10 @@ void CInstructions::LD( CInterpreter *interpreter, const uint16_t opcode )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Name: ADD()
+// Desc: Add Vx + Kk or Vx + Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::ADD( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( ((opcode >> 12) & 0xF) == 0x7 ) {
@@ -103,21 +139,48 @@ void CInstructions::ADD( CInterpreter *interpreter, const uint16_t opcode )
 	Vx += Vy;
 }
 
+//-----------------------------------------------------------------------------
+// Name: OR()
+// Desc: Calculates the OR operation between Vx and Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::OR( CInterpreter *interpreter, const uint16_t opcode )
 {
 	Vx |= Vy;
 }
 
+//-----------------------------------------------------------------------------
+// Name: AND()
+// Desc: Calculates the AND operation between Vx and Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::AND( CInterpreter *interpreter, const uint16_t opcode )
 {
 	Vx &= Vy;
 }
 
+//-----------------------------------------------------------------------------
+// Name: XOR()
+// Desc: Calculates the XOR operation between Vx and Vy.
+//-----------------------------------------------------------------------------
 void CInstructions::XOR( CInterpreter *interpreter, const uint16_t opcode )
 {
 	Vx ^= Vy;
 }
 
+//-----------------------------------------------------------------------------
+// Name: SUB()
+// Desc: Subtracts Vy from Vx. Uses branchless operation:
+//			(~Vx & Vy): A bit where Vx = 0 and Vy = 1 guarantees a borrow at
+//						that position.
+//
+//			(~(Vx ^ Vy) & (Vx - Vy)): Where Vx and Vy are equal, a borrow 
+//									  propagates
+//
+//			>> 7: Extracts MSB, which holds the final borrow.
+//
+//		 The whole expression is then inverted (~(...) & 1) beucase VF is NOT
+//		 borrow.
+//		
+//-----------------------------------------------------------------------------
 void CInstructions::SUB( CInterpreter *interpreter, const uint16_t opcode )
 {
 	VF = ~( ( (~Vx & Vy) | (~(Vx ^ Vy) & (Vx - Vy)) ) >> 7 ) & 1;
@@ -125,6 +188,10 @@ void CInstructions::SUB( CInterpreter *interpreter, const uint16_t opcode )
 	Vx = Vx - Vy;
 }
 
+//-----------------------------------------------------------------------------
+// Name: SHR()
+// Desc: Shift Vx one bit to the right.
+//-----------------------------------------------------------------------------
 void CInstructions::SHR( CInterpreter *interpreter, const uint16_t opcode )
 {
 	VF = Vx & 1;
@@ -132,6 +199,11 @@ void CInstructions::SHR( CInterpreter *interpreter, const uint16_t opcode )
 	Vx >>= 1;
 }
 
+//-----------------------------------------------------------------------------
+// Name: SUBN()
+// Desc: Calculates Vy - Vx and stores in Vx. See SUB() for a detailed explana
+//		 tion of the bit trick.
+//-----------------------------------------------------------------------------
 void CInstructions::SUBN( CInterpreter *interpreter, const uint16_t opcode )
 {
 	VF = ~( ( (~Vy & Vx) | (~(Vy ^ Vx) & (Vy - Vx)) ) >> 7 ) & 1;
@@ -139,6 +211,10 @@ void CInstructions::SUBN( CInterpreter *interpreter, const uint16_t opcode )
 	Vx = Vy - Vx;
 }
 
+//-----------------------------------------------------------------------------
+// Name: SHL()
+// Desc: Shift Vx one bit to the left.
+//-----------------------------------------------------------------------------
 void CInstructions::SHL( CInterpreter *interpreter, const uint16_t opcode )
 {
 	VF = ( Vx >> 7 ) & 1;
@@ -146,17 +222,29 @@ void CInstructions::SHL( CInterpreter *interpreter, const uint16_t opcode )
 	Vx <<= 1;
 }
 
+//-----------------------------------------------------------------------------
+// Name: RND()
+// Desc: Generates a random byte and ANDs it with the immediate mask Kk.
+//-----------------------------------------------------------------------------
 void CInstructions::RND( CInterpreter *interpreter, const uint16_t opcode )
 {
 	Vx = (uint8_t)rand() & Kk;
 }
 
+//-----------------------------------------------------------------------------
+// Name: DRW()
+// Desc: Draw an n-byte sprite starting at memory address I at (Vx,Vy).
+//-----------------------------------------------------------------------------
 void CInstructions::DRW( CInterpreter *interpreter, const uint16_t opcode )
 {
 	uint8_t *spriteData = interpreter->m_memory->GetPointer( interpreter->m_registers->I );
 	VF					= interpreter->m_display->Draw( Vx, Vy, spriteData, opcode & 0xF );
 }
 
+//-----------------------------------------------------------------------------
+// Name: SKP()
+// Desc: Skip the next instruction if the key with value Vx is pressed.
+//-----------------------------------------------------------------------------
 void CInstructions::SKP( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( interpreter->m_keys[ Vx ] ) {
@@ -164,6 +252,10 @@ void CInstructions::SKP( CInterpreter *interpreter, const uint16_t opcode )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Name: SKNP()
+// Desc: Skip the next instruction if the key with the value Vx is NOT pressed.
+//-----------------------------------------------------------------------------
 void CInstructions::SKNP( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( !interpreter->m_keys[ Vx ] ) {
@@ -179,11 +271,19 @@ static OpcodeHandler s_table8[ 16 ] = {
 	nullptr,					nullptr,			CInstructions::SHL, nullptr
 };
 
+//-----------------------------------------------------------------------------
+// Name: Dispatch8()
+// Desc: Routes 0x8xyn opcodes.
+//-----------------------------------------------------------------------------
 void CInstructions::Dispatch8( CInterpreter *interpreter, const uint16_t opcode )
 {
 	s_table8[ opcode & 0xF ]( interpreter, opcode );
 }
 
+//-----------------------------------------------------------------------------
+// Name: DispatchE()
+// Desc: Routes 0xExxx opcodes.
+//-----------------------------------------------------------------------------
 void CInstructions::DispatchE( CInterpreter *interpreter, const uint16_t opcode )
 {
 	if ( (opcode & 0xFF) == 0x9E ) {
@@ -194,6 +294,10 @@ void CInstructions::DispatchE( CInterpreter *interpreter, const uint16_t opcode 
 	SKNP( interpreter, opcode );
 }
 
+//-----------------------------------------------------------------------------
+// Name: DispatchF()
+// Desc: Routes 0xFxxx opcodes.
+//-----------------------------------------------------------------------------
 void CInstructions::DispatchF( CInterpreter *interpreter, const uint16_t opcode )
 {
 	switch ( opcode & 0xFF ) {
