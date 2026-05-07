@@ -11,7 +11,6 @@
 #include <stdio.h>
 
 static constexpr size_t CYCLES_PER_FRAME	= 5;
-static constexpr size_t TARGET_FRAME_MS		= 100 / 60;
 
 static constexpr SDL_Scancode s_keyMap[ 16 ] = {
 	SDL_SCANCODE_X,
