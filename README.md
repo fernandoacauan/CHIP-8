@@ -3,6 +3,9 @@
 
 An **CHIP-8 interpreter** written in C++, rendered in real-time via SDL2. Every subsystem (memory, display, CPU and allocator) is implemented from scratch, with an emphasis on low-level correctness and performance.
 
+<img width="669" height="371" alt="chip8-test-rom" src="https://github.com/user-attachments/assets/de7850c9-397b-427f-9707-6a9c70c85304" />
+
+
 ## Key Features
 
 *   **Full Instruction Set**: All 35 standard CHIP-8 opcodes are implemented, including arithmetic, bitwise operations, flow control, sprite drawing, and I/O.
